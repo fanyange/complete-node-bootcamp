@@ -1,6 +1,6 @@
 const express = require('express');
 const userController = require('../controllers/userController');
-require('babel-register');
+require('@babel/register');
 const AuthController = require('../controllers/authController');
 
 const authController = new AuthController();

@@ -1,5 +1,5 @@
 const express = require('express');
-require('babel-register');
+require('@babel/register');
 const TourController = require('../controllers/tourController');
 
 const router = express.Router();
