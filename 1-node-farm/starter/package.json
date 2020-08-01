@@ -1,0 +1,19 @@
+{
+	"dependencies": {
+		"moment": "^2.27.0",
+		"node-fetch": "^2.6.0",
+		"slugify": "^1.4.4"
+	},
+	"name": "node-farm",
+	"version": "1.0.0",
+	"description": "Learning Node.js",
+	"main": "index.js",
+	"devDependencies": {
+		"nodemon": "^2.0.4"
+	},
+	"scripts": {
+		"start": "nodemon index.js"
+	},
+	"author": "Tom Mao",
+	"license": "ISC"
+}
