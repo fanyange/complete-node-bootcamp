@@ -1,9 +1,9 @@
 const dotenv = require('dotenv');
 
 dotenv.config({ path: './config.env' });
-const assert = require('assert');
+const { assert } = require('chai');
 const mongoose = require('mongoose');
-const Tour = require('../models/tour_model');
+const Tour = require('../models/tourModel');
 
 describe('Test Mongoose', function () {
   before(function () {
@@ -20,7 +20,7 @@ describe('Test Mongoose', function () {
   describe('.find()', function () {
     it('should return 11 documents', async function () {
       const tours = await Tour.find();
-      assert.equal(tours.length, 11);
+      assert.equal(tours.length, 9);
     });
   });
 
