@@ -9,11 +9,9 @@ exports.getAllUsers = async (req, res) => {
   });
 };
 exports.createUser = async (req, res) => {
-  const user = await User.create(req.body);
-
-  res.status(201).json({
-    status: 'success',
-    data: { user },
+  res.status(500).json({
+    status: 'error',
+    message: 'This route is not yet defined!',
   });
 };
 exports.showUser = (req, res) => {
