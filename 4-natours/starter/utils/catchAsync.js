@@ -7,8 +7,15 @@ exports.catchAsyncFun = (fn) => {
 exports.catchAsyncDecorator = (target, key, descriptor) => {
   const fn = descriptor.value;
   descriptor.value = function (req, res, next) {
-    fn.apply(this, [req, res, next]).catch(next);
-    console.log('Just catch an error in an asychronous function...');
+    fn.apply(this, [req, res, next]).catch((err) => {
+      console.log(
+        `Just catch an error in async method ${target.constructor.name}#${key}`
+      );
+      next(err);
+    });
+    console.log(
+      `Just decorate a asyc method: ${target.constructor.name}#${key}`
+    );
   };
   return descriptor;
 };
