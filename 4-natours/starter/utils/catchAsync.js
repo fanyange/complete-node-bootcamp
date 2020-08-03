@@ -13,9 +13,6 @@ exports.catchAsyncDecorator = (target, key, descriptor) => {
       );
       next(err);
     });
-    console.log(
-      `Just decorate a asyc method: ${target.constructor.name}#${key}`
-    );
   };
   return descriptor;
 };
