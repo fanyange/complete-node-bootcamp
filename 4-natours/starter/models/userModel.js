@@ -33,6 +33,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please provide a password'],
     minlength: 8,
+    select: false,
   },
   passwordConfirm: {
     type: String,
@@ -46,6 +47,10 @@ const userSchema = new mongoose.Schema({
     },
   },
 });
+
+userSchema.methods.authenticate = async function (password) {
+  return bcrypt.compare(password, this.password);
+};
 
 userSchema.pre('save', async function (next) {
   // Only run this function if password was actually modified.
