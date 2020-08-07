@@ -1,10 +1,12 @@
 const express = require('express');
 require('@babel/register');
 const TourController = require('../controllers/tourController');
+const AuthController = require('../controllers/authController');
 
 const router = express.Router();
 
 const tourController = new TourController();
+const authController = new AuthController();
 // router.param('id', tourController.checkID);
 
 router
@@ -16,7 +18,7 @@ router.route('/monthly-plan/:year').get(tourController.getMonthlyPlan);
 
 router
   .route('/')
-  .get(tourController.getAllTours)
+  .get(authController.protect, tourController.getAllTours)
   .post(tourController.createTour);
 router
   .route('/:id')
