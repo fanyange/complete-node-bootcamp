@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { promisify } = require('util');
 const AppError = require('../utils/appError');
 const User = require('../models/userModel');
@@ -8,6 +9,27 @@ const sendEmail = require('../utils/email');
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
+  });
+};
+
+const createSendToken = (user, statusCode, res) => {
+  const token = signToken(user._id);
+  const cookieOptions = {
+    maxAge: process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    // signed: true,
+  };
+
+  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+
+  res.cookie('jwt', token, cookieOptions);
+
+  user.password = undefined;
+
+  res.status(statusCode).json({
+    status: 'success',
+    token,
+    data: { user },
   });
 };
 
@@ -71,13 +93,7 @@ class AuthController {
       passwordChangedAt: req.body.passwordChangedAt,
     });
 
-    const token = signToken(newUser._id);
-
-    res.status(201).json({
-      status: 'success',
-      token,
-      data: { user: newUser },
-    });
+    createSendToken(newUser, 201, res);
   }
 
   @catchAsyncDecorator
@@ -97,12 +113,7 @@ class AuthController {
       return next(new AppError('Incorrect email or password', 401));
     }
 
-    const token = signToken(user._id);
-
-    res.status(200).json({
-      status: 'success',
-      token,
-    });
+    createSendToken(user, 200, res);
   }
 
   @catchAsyncDecorator
@@ -123,7 +134,7 @@ class AuthController {
 
     const resetURL = `${req.protocol}://${req.get(
       'host'
-    )}/api/v1/reset/${resetToken}`;
+    )}/api/v1/resetPassword/${resetToken}`;
 
     const message = `Forgot your password? Submit a PATCH request with your new password and passwordConfirm to: ${resetURL}.\nIf you didn't forget your password, please ignore this email!`;
 
@@ -153,7 +164,54 @@ class AuthController {
   }
 
   @catchAsyncDecorator
-  async resetPassword(req, res, next) {}
+  async resetPassword(req, res, next) {
+    // 1) Get user based on reset token
+    const passwordResetDigest = crypto
+      .createHash('sha256')
+      .update(req.params.resetToken)
+      .digest('hex');
+    const user = await User.findOne({
+      passwordResetDigest,
+      passwordResetExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return next(
+        new AppError('Invalid reset token or the token is expired!', 400)
+      );
+    }
+
+    // 2) Reset password from request params
+    user.password = req.body.password;
+    user.passwordConfirm = req.body.passwordConfirm;
+    user.passwordResetDigest = undefined;
+    user.passwordResetExpires = undefined;
+
+    await user.save();
+    // 3) Update changedPasswordAt property for the user
+
+    // 4) Log the user in, send JWT
+    createSendToken(user, 200, res);
+  }
+
+  @catchAsyncDecorator
+  async updatePassword(req, res, next) {
+    // 1) Get user from collection
+    const user = await User.findById(req.user.id).select('+password');
+
+    // 2) Check if POSTed current password is correct
+    const passwordCorrect = await user.authenticate(req.body.currentPassword);
+    if (!passwordCorrect)
+      return next(new AppError('Your current password is wrong', 401));
+    // 3) If so, update password
+
+    user.password = req.body.password;
+    user.passwordConfirm = req.body.passwordConfirm;
+    await user.save();
+    // 4) Log user in, send JWT
+
+    createSendToken(user, 200, res);
+  }
 }
 
 module.exports = AuthController;

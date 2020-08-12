@@ -26,10 +26,11 @@ const userSchema = new mongoose.Schema({
     },
     default: 'user',
   },
-  // active: {
-  //   type: Boolean,
-  //   default: false,
-  // },
+  active: {
+    type: Boolean,
+    default: true,
+    select: false,
+  },
   photo: String,
   password: {
     type: String,
@@ -88,6 +89,19 @@ userSchema.pre('save', async function (next) {
 
   // Delete passwordConfirm field
   this.passwordConfirm = undefined;
+  next();
+});
+
+userSchema.pre('save', function (next) {
+  if (this.isNew || !this.isModified('password')) {
+    return next();
+  }
+  this.passwordChangedAt = Date.now() - 1000;
+  next();
+});
+
+userSchema.pre(/^find/, function (next) {
+  this.find({ active: { $ne: false } });
   next();
 });
 
